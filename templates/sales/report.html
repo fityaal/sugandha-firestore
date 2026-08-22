@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Sales Report – Sugandha{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h2><i class="fa-solid fa-file-invoice-dollar"></i> All Sales ({{ total }} records)</h2>
+    <a href="/sales/" class="btn btn-success"><i class="fa-solid fa-plus"></i> New Sale</a>
+  </div>
+  <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <input type="text" name="q" class="form-control" placeholder="Search bill, item, customer, IMEI..." value="{{ q }}" style="max-width:260px">
+    <input type="date" name="from_date" class="form-control" value="{{ from_date }}" style="max-width:150px">
+    <input type="date" name="to_date" class="form-control" value="{{ to_date }}" style="max-width:150px">
+    <select name="pay" class="form-control" style="max-width:160px">
+      <option value="">All Payments</option>
+      <option value="CASH" {% if pay_filter=='CASH' %}selected{% endif %}>CASH</option>
+      <option value="ONLINE" {% if pay_filter=='ONLINE' %}selected{% endif %}>ONLINE/UPI</option>
+      <option value="EMI" {% if pay_filter=='EMI' %}selected{% endif %}>EMI</option>
+      <option value="CONSUMER" {% if pay_filter=='CONSUMER' %}selected{% endif %}>CONSUMER'S</option>
+      <option value="CARD" {% if pay_filter=='CARD' %}selected{% endif %}>CARD</option>
+      <option value="CHEQUE" {% if pay_filter=='CHEQUE' %}selected{% endif %}>CHEQUE</option>
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+    <a href="/sales/report" class="btn btn-outline">Clear</a>
+  </form>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <small style="color:var(--muted)">Showing {{ sales|length }} of {{ total }} records</small>
+    <strong style="color:var(--success);font-size:15px">Grand Total: ₹{{ '{:,.0f}'.format(grand_total) }}</strong>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Invoice No</th><th>Date</th><th>Item</th><th>IMEI / Color</th><th>Customer</th><th>Mobile</th><th>Qty</th><th>Amount</th><th>GST%</th><th>Payment</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+      {% for s in sales %}
+      <tr>
+        <td style="color:var(--muted)">{{ loop.index + (page-1)*30 }}</td>
+        <td>
+          <strong style="font-family:'Rajdhani',sans-serif;font-size:15px">{{ s.bill_no }}</strong>
+          {% set _has = 'items' in s and s['items'] is iterable and s['items'] is not string %}
+          {% set ic = s.item_count if s.item_count else (s['items']|length if _has else 1) %}
+          {% if ic > 1 %}
+          <span class="badge badge-primary" style="margin-left:4px;font-size:9px">{{ ic }} items</span>
+          {% endif %}
+        </td>
+        <td style="white-space:nowrap">{{ s.sell_date }}</td>
+        <td style="max-width:150px">
+          <strong>{{ s.item_name }}</strong>
+          {% set _has = 'items' in s and s['items'] is iterable and s['items'] is not string %}
+          {% set ic = s.item_count if s.item_count else (s['items']|length if _has else 1) %}
+          {% if ic > 1 %}
+          <br><small style="color:var(--accent2);font-weight:600">+ {{ ic-1 }} more item{{ 's' if ic-1 > 1 else '' }}</small>
+          {% elif s.color %}
+          <br><small style="color:var(--muted)">{{ s.color }}</small>
+          {% endif %}
+        </td>
+        <td>
+          <small>
+            {% set _has = 'items' in s and s['items'] is iterable and s['items'] is not string %}
+            {% set ic = s.item_count if s.item_count else (s['items']|length if _has else 1) %}
+            {% if ic > 1 %}
+              <span class="badge badge-warning">{{ ic }} IMEIs</span>
+            {% elif s.imei %}
+              {{ s.imei }}
+            {% else %}
+              —
+            {% endif %}
+          </small>
+        </td>
+        <td>{{ s.customer_name or '—' }}</td>
+        <td>{{ s.customer_mobile or '—' }}</td>
+        <td>{{ s.sell_qty }}</td>
+        <td><strong>₹{{ '{:,.0f}'.format(s.total_price or 0) }}</strong></td>
+        <td>{{ s.gst_percent }}%</td>
+        <td>
+          {% set pt = s.payment_type or 'CASH' %}
+          <span class="badge badge-{% if pt=='CASH' %}success{% elif pt=='ONLINE' %}primary{% elif pt=='EMI' or pt=='CONSUMER' %}warning{% else %}primary{% endif %}">{{ pt }}</span>
+          {% if s.loan_from %}<br><small style="color:var(--muted)">{{ s.loan_from }}</small>{% endif %}
+        </td>
+        <td style="white-space:nowrap">
+          <a href="/sales/edit/{{ s.id }}" class="btn btn-sm btn-primary" title="Edit" style="background:var(--accent2)">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </a>
+          <a href="/sales/print/{{ s.id }}" class="btn btn-sm btn-print" title="Print Invoice"><i class="fa-solid fa-print"></i></a>
+          <form method="POST" action="/sales/delete/{{ s.id }}" style="display:inline" onsubmit="return confirm('Delete invoice {{ s.bill_no }}?')">
+            <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="12" style="text-align:center;padding:30px;color:var(--muted)">No sales records found</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pages > 1 %}
+  <div class="pagination" style="margin-top:14px">
+    {% if page > 1 %}<a href="?page={{ page-1 }}&q={{ q }}&from_date={{ from_date }}&to_date={{ to_date }}&pay={{ pay_filter }}" class="page-btn">‹ Prev</a>{% endif %}
+    {% for p in range([1,page-2]|max, [pages+1,page+3]|min) %}
+    <a href="?page={{ p }}&q={{ q }}&from_date={{ from_date }}&to_date={{ to_date }}&pay={{ pay_filter }}" class="page-btn {% if p==page %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&q={{ q }}&from_date={{ from_date }}&to_date={{ to_date }}&pay={{ pay_filter }}" class="page-btn">Next ›</a>{% endif %}
+    <span style="margin-left:8px;color:var(--muted);font-size:12px">Page {{ page }} of {{ pages }}</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Sugandha Mobiles{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --primary: #1a2744;
+  --accent: #e8a020;
+  --accent2: #2563eb;
+  --surface: #f4f6fb;
+  --card: #ffffff;
+  --border: #dde3f0;
+  --text: #1e2a42;
+  --muted: #6b7a99;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --sidebar-w: 240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans',sans-serif;background:var(--surface);color:var(--text);min-height:100vh;display:flex}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--primary);height:100vh;position:fixed;top:0;left:0;z-index:100;display:flex;flex-direction:column;transition:.3s;overflow-y:auto}
+.sidebar-brand{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-brand h1{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:1px}
+.sidebar-brand p{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;letter-spacing:.5px}
+.sidebar-brand .logo-icon{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.sidebar-brand .logo-icon i{color:#fff;font-size:18px}
+
+.nav-section{padding:12px 0 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;padding-left:20px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:10px 20px;color:rgba(255,255,255,.7);text-decoration:none;font-size:14px;font-weight:500;transition:.2s;border-left:3px solid transparent}
+.nav-link:hover,.nav-link.active{color:#fff;background:rgba(255,255,255,.08);border-left-color:var(--accent)}
+.nav-link i{width:18px;text-align:center;font-size:15px}
+
+/* MAIN CONTENT */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:#fff;padding:14px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--primary)}
+.topbar-date{font-size:12px;color:var(--muted)}
+.content{padding:24px 28px;flex:1}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.card-header h2{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--primary)}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent)}
+.stat-card.blue::before{background:var(--accent2)}
+.stat-card.green::before{background:var(--success)}
+.stat-card.red::before{background:var(--danger)}
+.stat-card h3{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.stat-card .value{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--primary);line-height:1}
+.stat-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-card .icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:32px;color:var(--border)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:.2s;font-family:'Noto Sans',sans-serif}
+.btn-primary{background:var(--accent2);color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#c8881a}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#15803d}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#b91c1c}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-print{background:var(--primary);color:#fff}.btn-print:hover{background:#0f1829}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.form-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.form-control{padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;color:var(--text);background:#fff;transition:.2s;font-family:'Noto Sans',sans-serif;width:100%}
+.form-control:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+select.form-control{cursor:pointer}
+.form-section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}
+.form-section-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--primary);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.gst-box{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid var(--accent);border-radius:8px;padding:12px 16px;display:flex;gap:20px;align-items:center;margin-top:10px}
+.gst-box .gst-item{text-align:center}
+.gst-box .gst-item label{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.gst-box .gst-item span{display:block;font-size:16px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--primary)}
+.total-box{background:var(--primary);color:#fff;border-radius:8px;padding:12px 20px;text-align:right}
+.total-box .label{font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.5px}
+.total-box .amount{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700}
+
+/* TABLES */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--surface);padding:10px 12px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:.15s}
+tbody tr:hover{background:#f8faff}
+tbody td{padding:10px 12px;vertical-align:middle}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-success{background:#dcfce7;color:var(--success)}
+.badge-danger{background:#fee2e2;color:var(--danger)}
+.badge-warning{background:#fef3c7;color:var(--warning)}
+.badge-primary{background:#dbeafe;color:var(--accent2)}
+.badge-sold{background:#fce7f3;color:#9d174d}
+
+/* ALERTS */
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;display:flex;align-items:center;gap:10px}
+.alert-success{background:#dcfce7;border:1px solid #86efac;color:#166534}
+.alert-danger{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
+.alert-info{background:#dbeafe;border:1px solid #93c5fd;color:#1e40af}
+
+/* PAGINATION */
+.pagination{display:flex;gap:4px;align-items:center;margin-top:16px}
+.page-btn{padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;color:var(--text);text-decoration:none;font-size:13px;font-weight:500;transition:.2s}
+.page-btn:hover,.page-btn.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+
+/* SEARCH BAR */
+.search-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.search-bar .form-control{max-width:280px}
+
+/* PRINT INVOICE */
+@media print {
+  .sidebar,.topbar,.no-print{display:none!important}
+  .main{margin-left:0}
+  .content{padding:0}
+  .card{box-shadow:none;border:none}
+  .print-only{display:block!important}
+  body{background:#fff}
+}
+.print-only{display:none}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .form-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .sidebar{width:60px}
+  .sidebar-brand h1,.sidebar-brand p,.nav-link span{display:none}
+  .main{margin-left:60px}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+
+/* AUTOCOMPLETE */
+.autocomplete-wrap{position:relative}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--accent2);border-top:none;border-radius:0 0 7px 7px;max-height:220px;overflow-y:auto;z-index:200;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.autocomplete-list div{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9}
+.autocomplete-list div:hover,.autocomplete-list div.active{background:#dbeafe;color:var(--accent2)}
+.autocomplete-list div:last-child{border-bottom:none}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto}
+.modal h3{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;margin-bottom:16px;color:var(--primary)}
+</style>
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+    <h1>SUGANDHA</h1>
+    <p>MOBILE SHOP</p>
+  </div>
+
+  <div class="nav-section">Main</div>
+  <a href="/" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+    <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+  </a>
+
+  <div class="nav-section">Transactions</div>
+  <a href="/purchase/" class="nav-link {% if 'purchase' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-cart-plus"></i><span>Purchase Entry</span>
+  </a>
+  <a href="/sales/" class="nav-link {% if 'sales' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-receipt"></i><span>Sales Entry</span>
+  </a>
+
+  <div class="nav-section">Reports</div>
+  <a href="/purchase/report" class="nav-link">
+    <i class="fa-solid fa-file-invoice"></i><span>Purchase Report</span>
+  </a>
+  <a href="/sales/report" class="nav-link">
+    <i class="fa-solid fa-file-invoice-dollar"></i><span>Sales Report</span>
+  </a>
+  <a href="/stock/" class="nav-link {% if 'stock' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-boxes-stacked"></i><span>Stock Balance</span>
+  </a>
+
+  <div class="nav-section">Masters</div>
+  <a href="/items/" class="nav-link {% if 'items' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-mobile-alt"></i><span>Item Master</span>
+  </a>
+  <a href="/firms/" class="nav-link {% if 'firms' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-building"></i><span>Firm Master</span>
+  </a>
+
+  <div class="nav-section">System</div>
+  <a href="/settings/" class="nav-link {% if 'settings' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-gear"></i><span>Shop Settings</span>
+  </a>
+  <a href="/change-password" class="nav-link {% if 'change_password' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-key"></i><span>Change Password</span>
+  </a>
+
+  <!-- USER INFO + LOGOUT at bottom of sidebar -->
+  <div style="margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding:14px 20px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:32px;height:32px;background:var(--accent);border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="fa-solid fa-user" style="color:#fff;font-size:13px"></i>
+      </div>
+      <div style="overflow:hidden">
+        <div style="color:#fff;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ session.get('full_name') or session.get('username','User') }}
+        </div>
+        <div style="color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase;letter-spacing:.5px">
+          {{ session.get('role','admin') }}
+        </div>
+      </div>
+    </div>
+    <a href="/logout" style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+       background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);border-radius:7px;
+       color:#fca5a5;text-decoration:none;font-size:13px;font-weight:600;transition:.2s"
+       onmouseover="this.style.background='rgba(220,38,38,.3)'"
+       onmouseout="this.style.background='rgba(220,38,38,.15)'">
+      <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+    </a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="topbar-date" id="topbar-date"></div>
+      <div style="font-size:12px;color:var(--muted);border-left:1px solid var(--border);padding-left:16px">
+        <i class="fa-solid fa-circle-user" style="color:var(--accent2)"></i>
+        &nbsp;{{ session.get('full_name') or session.get('username','') }}
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}"><i class="fa-solid fa-circle-info"></i> {{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+// Live date/time in topbar
+function updateClock(){
+  const now = new Date();
+  const opts = {weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'};
+  document.getElementById('topbar-date').textContent = now.toLocaleDateString('en-IN',opts);
+}
+updateClock(); setInterval(updateClock,60000);
+
+// Generic autocomplete
+function initAutocomplete(inputId, listId, dataArray, onSelect){
+  const inp = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  if(!inp||!list) return;
+  let activeIdx = -1;
+  inp.addEventListener('input', function(){
+    const q = this.value.toLowerCase().trim();
+    list.innerHTML=''; activeIdx=-1;
+    if(!q){list.style.display='none';return;}
+    const matches = dataArray.filter(d=>d.toLowerCase().includes(q)).slice(0,20);
+    if(!matches.length){list.style.display='none';return;}
+    matches.forEach((m,i)=>{
+      const div=document.createElement('div');
+      div.textContent=m; div.dataset.idx=i;
+      div.addEventListener('mousedown',function(e){e.preventDefault();inp.value=m;list.style.display='none';if(onSelect)onSelect(m);});
+      list.appendChild(div);
+    });
+    list.style.display='block';
+  });
+  inp.addEventListener('keydown',function(e){
+    const items=list.querySelectorAll('div');
+    if(e.key==='ArrowDown'){activeIdx=Math.min(activeIdx+1,items.length-1);}
+    else if(e.key==='ArrowUp'){activeIdx=Math.max(activeIdx-1,-1);}
+    else if(e.key==='Enter'&&activeIdx>=0){e.preventDefault();items[activeIdx].dispatchEvent(new Event('mousedown'));return;}
+    else if(e.key==='Escape'){list.style.display='none';}
+    items.forEach((el,i)=>el.classList.toggle('active',i===activeIdx));
+  });
+  document.addEventListener('click',function(e){if(!inp.contains(e.target)&&!list.contains(e.target))list.style.display='none';});
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

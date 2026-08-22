@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Purchase Report – Sugandha{% endblock %}
+{% block page_title %}Purchase Report{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <h2><i class="fa-solid fa-file-invoice"></i> Purchase Records</h2>
+    <a href="/purchase/" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Purchase</a>
+  </div>
+
+  <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <input type="text" name="q" class="form-control" placeholder="Search item, bill no, firm..." value="{{ q }}" style="max-width:240px">
+    <input type="date" name="from_date" class="form-control" value="{{ from_date }}" style="max-width:145px">
+    <input type="date" name="to_date" class="form-control" value="{{ to_date }}" style="max-width:145px">
+    <select name="firm" class="form-control" style="max-width:200px">
+      <option value="">All Firms</option>
+      {% for firm in firms %}
+      <option value="{{ firm }}" {% if firm==firm_filter %}selected{% endif %}>{{ firm }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" class="form-control" style="max-width:130px">
+      <option value="">All Status</option>
+      <option value="0" {% if status_filter=='0' %}selected{% endif %}>In Stock</option>
+      <option value="1" {% if status_filter=='1' %}selected{% endif %}>Sold</option>
+    </select>
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+    <a href="/purchase/report" class="btn btn-outline">Clear</a>
+  </form>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <small style="color:var(--muted)">{{ total }} records found</small>
+    <div style="display:flex;gap:16px;align-items:center">
+      <span style="font-size:13px;color:var(--muted)">Total Value:</span>
+      <strong style="color:var(--accent2);font-size:15px">₹{{ '{:,.2f}'.format(grand_total) }}</strong>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Bill No</th><th>Date</th><th>Item</th>
+          <th>Color / IMEI</th><th>Qty</th><th>Rate</th><th>GST%</th>
+          <th>Total</th><th>Firm</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for p in purchases %}
+      <tr>
+        <td style="color:var(--muted);font-size:12px">{{ loop.index + (page-1)*25 }}</td>
+        <td><strong>{{ p.bill_no }}</strong></td>
+        <td style="white-space:nowrap">{{ p.purchase_date }}</td>
+        <td>
+          <strong style="font-size:13px">{{ p.item_name }}</strong>
+          {% if p.ram or p.memory %}
+          <br><small style="color:var(--muted)">{{ p.ram or '' }}{% if p.ram and p.memory %}/{% endif %}{{ p.memory or '' }}</small>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.color %}<span class="badge badge-primary" style="font-size:10px">{{ p.color }}</span><br>{% endif %}
+          {% if p.imei %}<small style="color:var(--muted);font-size:11px">{{ p.imei }}</small>{% endif %}
+        </td>
+        <td style="text-align:center">{{ p.qty }}</td>
+        <td>₹{{ '{:,.0f}'.format(p.unit_price or 0) }}</td>
+        <td style="text-align:center">{{ p.gst_percent }}%</td>
+        <td><strong>₹{{ '{:,.0f}'.format(p.total_price or 0) }}</strong></td>
+        <td style="font-size:12px;max-width:120px">{{ p.firm_name or '—' }}</td>
+        <td>
+          {% if p.sold %}
+            <span class="badge badge-sold">SOLD</span>
+          {% else %}
+            <span class="badge badge-success">IN STOCK</span>
+          {% endif %}
+        </td>
+        <td style="white-space:nowrap">
+          <a href="/purchase/edit/{{ p.id }}" class="btn btn-sm btn-primary" title="Edit" style="background:var(--accent2)">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </a>
+          <a href="/purchase/print/{{ p.id }}" class="btn btn-sm btn-print" title="Print">
+            <i class="fa-solid fa-print"></i>
+          </a>
+          <form method="POST" action="/purchase/delete/{{ p.id }}" style="display:inline"
+                onsubmit="return confirm('Delete purchase {{ p.bill_no }}?')">
+            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="12" style="text-align:center;padding:30px;color:var(--muted)">
+        No purchase records found
+      </td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pages > 1 %}
+  <div class="pagination" style="margin-top:14px">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}&q={{ q }}&from_date={{ from_date }}&to_date={{ to_date }}&firm={{ firm_filter }}&status={{ status_filter }}" class="page-btn">‹ Prev</a>
+    {% endif %}
+    {% for pg in range([1, page-2]|max, [pages+1, page+4]|min) %}
+    <a href="?page={{ pg }}&q={{ q }}&from_date={{ from_date }}&to_date={{ to_date }}&firm={{ firm_filter }}&status={{ status_filter }}"
+       class="page-btn {% if pg==page %}active{% endif %}">{{ pg }}</a>
+    {% endfor %}
+    {% if page < pages %}
+    <a href="?page={{ page+1 }}&q={{ q }}&from_date={{ from_date }}&to_date={{ to_date }}&firm={{ firm_filter }}&status={{ status_filter }}" class="page-btn">Next ›</a>
+    {% endif %}
+    <span style="margin-left:8px;color:var(--muted);font-size:12px">Page {{ page }} of {{ pages }}</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

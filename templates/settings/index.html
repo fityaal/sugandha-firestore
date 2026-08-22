@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Shop Settings{% endblock %}
+{% block page_title %}Shop Settings{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px">
+  <div class="card-header"><h2><i class="fa-solid fa-gear"></i> Shop / Invoice Settings</h2></div>
+  <div class="alert alert-info"><i class="fa-solid fa-circle-info"></i> These details print on every tax invoice.</div>
+  <form method="POST">
+    <div class="form-group"><label>Shop Name *</label><input type="text" name="shop_name" class="form-control" value="{{ shop.shop_name if shop else 'SUGANDHA ENTERPRISES' }}" required></div>
+    <div class="form-group" style="margin-top:14px"><label>Address</label><textarea name="shop_address" class="form-control" rows="2">{{ shop.shop_address if shop else '' }}</textarea></div>
+    <div class="form-grid-2" style="margin-top:14px">
+      <div class="form-group"><label>GST Number</label><input type="text" name="shop_gst_no" class="form-control" value="{{ shop.shop_gst_no if shop else '' }}"></div>
+      <div class="form-group"><label>Mobile No</label><input type="text" name="shop_mobile" class="form-control" value="{{ shop.shop_mobile if shop else '' }}"></div>
+      <div class="form-group"><label>Email</label><input type="email" name="shop_email" class="form-control" value="{{ shop.shop_email if shop else '' }}"></div>
+      <div class="form-group"><label>State Code</label><input type="text" name="state_code" class="form-control" value="{{ shop.state_code if shop else '27' }}"></div>
+    </div>
+    <div style="margin-top:20px"><button type="submit" class="btn btn-primary" style="padding:10px 24px"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button></div>
+  </form>
+</div>
+{% endblock %}

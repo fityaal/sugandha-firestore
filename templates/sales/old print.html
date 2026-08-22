@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% block title %}Invoice {{ s.bill_no }} – Sugandha Enterprises{% endblock %}
+{% block page_title %}Tax Invoice No. {{ s.bill_no }}{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+  .sidebar,.topbar,.no-print { display:none!important }
+  .main { margin-left:0!important }
+  .content { padding:0!important }
+  body { background:#fff!important }
+  .invoice-wrap { max-width:100%!important; box-shadow:none!important; border:none!important }
+}
+.invoice-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1.5px solid #999;
+  padding: 0;
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 12px;
+  color: #000;
+}
+.inv-header { display:grid; grid-template-columns:80px 1fr; align-items:center; padding:10px 14px; border-bottom:1.5px solid #333; gap:12px }
+.inv-logo { width:72px; height:72px; border:2px solid #000; display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:9px;letter-spacing:.5px }
+.inv-logo span { font-size:16px; font-family:'Rajdhani',sans-serif; font-weight:700 }
+.inv-title h1 { font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;letter-spacing:1px;margin:0 }
+.inv-title p { font-size:11px;margin:1px 0;color:#333 }
+.inv-subtitle { text-align:center;font-size:14px;font-weight:700;letter-spacing:2px;padding:5px;border-bottom:1.5px solid #333;border-top:1px solid #333 }
+.inv-row { display:grid; padding:4px 14px; gap:4px }
+.inv-2col { grid-template-columns: 1fr 1fr }
+.inv-3col { grid-template-columns: 2fr 1fr 1fr }
+.inv-field { font-size:12px }
+.inv-field label { font-weight:600; margin-right:4px }
+.inv-field span { border-bottom:1px solid #999; display:inline-block; min-width:120px; padding:0 4px }
+.inv-divider { border-top:1px solid #666; margin:0 }
+table.inv-table { width:100%; border-collapse:collapse; font-size:12px }
+table.inv-table th { background:#f0f0f0; border:1px solid #888; padding:5px 7px; text-align:center; font-weight:700; font-size:11px }
+table.inv-table td { border:1px solid #888; padding:5px 7px; vertical-align:top }
+table.inv-table td.center { text-align:center }
+table.inv-table td.right { text-align:right }
+.inv-summary { display:grid; grid-template-columns:1fr 200px; border-top:1.5px solid #333 }
+.inv-summary-left { border-right:1px solid #888; padding:8px 14px; font-size:12px }
+.inv-summary-right { padding:0 }
+.sum-row { display:grid; grid-template-columns:1fr auto; padding:3px 10px; border-bottom:1px solid #ddd; font-size:12px }
+.sum-row.total-row { font-weight:700; font-size:13px; background:#f8f8f8; border-top:1.5px solid #333 }
+.inv-footer { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #888; min-height:80px }
+.inv-footer-left { padding:8px 14px; border-right:1px solid #888; font-size:11px }
+.inv-footer-right { padding:8px 14px; text-align:right; font-size:11px }
+.inv-sign { margin-top:30px; font-weight:700; font-size:11px }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-print" style="display:flex;gap:10px;margin-bottom:18px">
+  <button onclick="window.print()" class="btn btn-print" style="font-size:15px;padding:10px 24px"><i class="fa-solid fa-print"></i> Print Invoice</button>
+  <a href="/sales/" class="btn btn-success"><i class="fa-solid fa-plus"></i> New Sale</a>
+  <a href="/sales/report" class="btn btn-outline"><i class="fa-solid fa-list"></i> All Sales</a>
+  <a href="/sales/print/{{ s.id }}" class="btn btn-outline" onclick="return false" style="color:var(--muted);cursor:default"><i class="fa-solid fa-hashtag"></i> Invoice {{ s.bill_no }}</a>
+</div>
+
+<div class="invoice-wrap" id="invoice">
+
+  <!-- HEADER -->
+  <div class="inv-header">
+    <div class="inv-logo">
+      <span>Sugandha</span>
+      <div style="font-size:8px;text-align:center;letter-spacing:.3px">MOBILE</div>
+    </div>
+    <div class="inv-title">
+      <h1>{{ shop.shop_name if shop else 'SUGANDHA ENTERPRISES' }}</h1>
+      <p>{{ shop.shop_address if shop and shop.shop_address else '03, Shubhrambh Society, Shivshakti Nagar, Dattawadi, Nagpur 440023' }}</p>
+      <p>Mobile No: {{ shop.shop_mobile if shop and shop.shop_mobile else '9766773431' }} &nbsp;&nbsp;&nbsp; GST No: {{ shop.shop_gst_no if shop and shop.shop_gst_no else '27APXPT2290K1ZX' }}</p>
+    </div>
+  </div>
+
+  <div class="inv-subtitle">TAX INVOICE</div>
+
+  <!-- CUSTOMER ROW 1 -->
+  <div class="inv-row inv-2col" style="padding-top:6px">
+    <div class="inv-field"><label>Customer Name:</label> <span>{{ s.customer_name or '' }}</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <div class="inv-field"><label>Reverse Charge (Y/N):</label> <span>{{ s.reverse_charge or 'N' }}</span></div>
+      <div></div>
+    </div>
+  </div>
+  <div class="inv-row" style="grid-template-columns:1fr 1fr;padding-top:2px">
+    <div></div>
+    <div class="inv-row" style="grid-template-columns:auto 1fr;padding:0;gap:8px">
+      <div class="inv-field"><label>Invoice No:</label></div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700">{{ s.bill_no }}</div>
+    </div>
+  </div>
+  <div class="inv-row inv-2col" style="padding-top:2px">
+    <div class="inv-field"><label>Customer Address:</label> <span>{{ s.customer_address or '' }}</span></div>
+    <div class="inv-row" style="grid-template-columns:1fr 1fr;padding:0;gap:8px">
+      <div class="inv-field"><label>Invoice Date:</label> <span>{{ s.sell_date | format_date }}</span></div>
+      <div class="inv-field"><label>State Code:</label> <span>{{ shop.state_code if shop and shop.state_code else '27' }}</span></div>
+    </div>
+  </div>
+  <div class="inv-row inv-2col" style="padding-top:2px;padding-bottom:6px">
+    <div class="inv-field"><label>Customer GST No:</label> <span>{{ s.gst_no or '0' }}</span> &nbsp;&nbsp; <label>Cust. Mob No:</label> <span>{{ s.customer_mobile or '' }}</span></div>
+    <div></div>
+  </div>
+  <hr class="inv-divider">
+
+  <!-- ITEM TABLE -->
+  <table class="inv-table">
+    <thead>
+      <tr>
+        <th style="width:30px">SN</th>
+        <th>Description of Goods</th>
+        <th style="width:80px">HSN Code</th>
+        <th style="width:35px">Qty</th>
+        <th style="width:60px">Rate</th>
+        <th style="width:60px">Taxable Value</th>
+        <th style="width:40px">CGST%</th>
+        <th style="width:50px">Amt</th>
+        <th style="width:40px">SGST%</th>
+        <th style="width:50px">Amt</th>
+        <th style="width:70px">Net Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="center">1.</td>
+        <td>
+          <strong>{{ s.item_name }}</strong>
+          {% if s.color or s.imei %}
+          <br>
+          {% if s.color %}<small>Color/RAM/STORAGE &nbsp; {{ s.color }}</small><br>{% endif %}
+          {% if s.imei %}<small>IMEI NO: &nbsp;&nbsp;&nbsp; {{ s.imei }}</small>{% endif %}
+          {% endif %}
+        </td>
+        <td class="center">{{ s.hsn or '' }}</td>
+        <td class="center">{{ s.sell_qty }}</td>
+        <td class="right">{{ (s.unit_price or 0) | int }}</td>
+        <td class="right">{{ (s.price_without_gst or 0) | int }}</td>
+        <td class="center">{{ ((s.gst_percent or 12)/2) | int }}</td>
+        <td class="right">{{ ((s.gst_amount or 0)/2) | round(1) }}</td>
+        <td class="center">{{ ((s.gst_percent or 12)/2) | int }}</td>
+        <td class="right">{{ ((s.gst_amount or 0)/2) | round(1) }}</td>
+        <td class="right"><strong>{{ (s.total_price or 0) | int }}</strong></td>
+      </tr>
+      <!-- Empty padding rows -->
+      <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- SUMMARY SECTION -->
+  <div class="inv-summary">
+    <div class="inv-summary-left">
+      <div style="margin-bottom:6px"><label style="font-weight:700">Amount (in Words):</label>&nbsp; {{ amount_words(s.total_price or 0) | upper }}.</div>
+      <hr style="border:none;border-top:1px solid #ccc;margin:6px 0">
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px;font-size:12px">
+        <span style="font-weight:600">Payment Mode:</span> <span>{{ s.payment_type or 'CASH' }}</span>
+        <span style="font-weight:600">Loan No:</span> <span>{{ s.loan_no or '0' }}</span>
+        <span style="font-weight:600">Loan From:</span> <span>{{ s.loan_from or '' }}</span>
+        <span style="font-weight:600">Downpayment:</span> <span>{{ (s.downpayment or 0) | int }}</span>
+        <span style="font-weight:600">EMI:</span> <span>{{ (s.emi_amount or 0) | int }}</span>
+      </div>
+      <hr style="border:none;border-top:1px solid #ccc;margin:6px 0">
+      <div><span style="font-weight:600">Sold by:</span> {{ s.sold_by or 'MR.' }}</div>
+    </div>
+    <div class="inv-summary-right">
+      <div class="sum-row"><span>Gross Amount:</span><span>{{ (s.price_without_gst or 0) | int }}</span></div>
+      <div class="sum-row"><span>CGST Amount:</span><span>{{ ((s.gst_amount or 0)/2) | round(1) }}</span></div>
+      <div class="sum-row"><span>SGST Amount:</span><span>{{ ((s.gst_amount or 0)/2) | round(1) }}</span></div>
+      <div class="sum-row total-row"><span>Total Amount to be Paid:</span><span>{{ (s.total_price or 0) | int }}</span></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="inv-footer">
+    <div class="inv-footer-left">
+      <strong>Terms &amp; Conditions:</strong>
+      <ol style="margin:4px 0 0 14px;padding:0;font-size:10px;line-height:1.6">
+        <li>Subject to Nagpur Jurisdiction</li>
+        <li>Warranty covered by Company at service centres &amp; is not out risk, I accept this condition.</li>
+        <li>No Claim, No Return, No Exchange</li>
+        <li>Goods once sold will not be taken back or exchanged. Interest 24% p.a will be charged in all invoices not paid within 15 days</li>
+      </ol>
+    </div>
+    <div class="inv-footer-right">
+      <div style="margin-bottom:4px">For</div>
+      <div style="font-weight:700;font-size:12px">{{ shop.shop_name if shop else 'Sugandha Enterprises' }}</div>
+      <div style="margin-top:36px;border-top:1px solid #333;padding-top:4px;display:inline-block">
+        <div>Customer Signature</div>
+      </div>
+      <div style="margin-top:0;padding-top:4px;display:inline-block;margin-left:20px">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+        <div style="border-top:1px solid #333;padding-top:4px">Authorised Signatory</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

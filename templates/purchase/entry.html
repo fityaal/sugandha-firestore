@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit_data %}Edit Purchase – Sugandha{% else %}Purchase Entry – Sugandha{% endif %}{% endblock %}
+{% block page_title %}{% if edit_data %}Edit Purchase Bill #{{ edit_data.bill_no }}{% else %}New Purchase Entry{% endif %}{% endblock %}
+{% block content %}
+
+{% set edit = edit_data is not none %}
+<form method="POST" action="{{ '/purchase/update/' ~ edit_data.id if edit else '/purchase/save' }}" id="purchaseForm">
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-cart-plus" style="color:var(--accent2)"></i> Purchase Details</h2>
+      <a href="/purchase/report" class="btn btn-outline btn-sm"><i class="fa-solid fa-list"></i> All Purchases</a>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Purchase Date *</label>
+        <input type="date" name="purchase_date" class="form-control" value="{{ edit_data.purchase_date if edit else today }}" required>
+      </div>
+      <div class="form-group">
+        <label>Bill No *</label>
+        <input type="text" name="bill_no" class="form-control" placeholder="Enter supplier's bill/invoice no." required
+               style="font-weight:700;font-family:'Rajdhani',sans-serif;font-size:16px"
+               value="{{ edit_data.bill_no if edit else '' }}">
+      </div>
+      <div class="form-group">
+        <label>GST %</label>
+        <select name="gst_percent" id="gst_percent" class="form-control" onchange="calcGST()">
+          <option value="0" {% if edit and edit_data.gst_percent == 0 %}selected{% endif %}>0% (Exempt)</option>
+          <option value="5" {% if edit and edit_data.gst_percent == 5 %}selected{% endif %}>5%</option>
+          <option value="12" {% if not edit or edit_data.gst_percent == 12 %}selected{% endif %}>12%</option>
+          <option value="18" {% if edit and edit_data.gst_percent == 18 %}selected{% endif %}>18%</option>
+          <option value="28" {% if edit and edit_data.gst_percent == 28 %}selected{% endif %}>28%</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-mobile-alt" style="color:var(--accent2)"></i> Item Details</h2>
+    </div>
+    <div class="form-grid">
+      <div class="form-group autocomplete-wrap" style="grid-column:span 2">
+        <label>Item Name *</label>
+        <input type="text" name="item_name" id="item_input" class="form-control"
+               placeholder="Type to search item..." required autocomplete="off"
+               value="{{ edit_data.item_name if edit else '' }}">
+        <div class="autocomplete-list" id="item_list" style="display:none"></div>
+      </div>
+      <div class="form-group">
+        <label>HSN Code</label>
+        <input type="text" name="hsn" id="hsn" class="form-control" placeholder="e.g. 85171300"
+               value="{{ edit_data.hsn if edit else '' }}">
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <input type="text" name="color" class="form-control" placeholder="e.g. Midnight Black"
+               value="{{ edit_data.color if edit else '' }}">
+      </div>
+      <div class="form-group">
+        <label>RAM</label>
+        <input type="text" name="ram" class="form-control" placeholder="e.g. 6GB"
+               value="{{ edit_data.ram if edit else '' }}">
+      </div>
+      <div class="form-group">
+        <label>Storage / Memory</label>
+        <input type="text" name="memory" class="form-control" placeholder="e.g. 128GB"
+               value="{{ edit_data.memory if edit else '' }}">
+      </div>
+      <div class="form-group">
+        <label>IMEI Number</label>
+        <input type="text" name="imei" class="form-control" placeholder="15-digit IMEI (optional)"
+               value="{{ edit_data.imei if edit else '' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-indian-rupee-sign" style="color:var(--success)"></i> Pricing</h2>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Quantity *</label>
+        <input type="number" name="qty" id="qty" class="form-control" value="{{ edit_data.qty if edit else 1 }}" min="1" required onchange="calcGST()">
+      </div>
+      <div class="form-group">
+        <label>Unit Price — incl. GST (₹) *</label>
+        <input type="number" name="unit_price" id="unit_price" class="form-control"
+               placeholder="0" step="1" required onchange="calcGST()"
+               value="{{ edit_data.unit_price if edit else '' }}">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button type="button" class="btn btn-outline" onclick="calcGST()">
+          <i class="fa-solid fa-calculator"></i> Calculate GST
+        </button>
+      </div>
+    </div>
+
+    <div class="gst-box" style="margin-top:14px">
+      <div class="gst-item"><label>Taxable Value</label><span id="price_ex">₹0</span></div>
+      <div class="gst-item"><label>CGST <span id="cgst_label">6</span>%</label><span id="cgst_amt">₹0.0</span></div>
+      <div class="gst-item"><label>SGST <span id="sgst_label">6</span>%</label><span id="sgst_amt">₹0.0</span></div>
+      <div class="gst-item"><label>Total GST</label><span id="gst_total">₹0</span></div>
+      <div class="total-box" style="margin-left:auto">
+        <div class="label">TOTAL AMOUNT</div>
+        <div class="amount" id="grand_total">₹0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-building" style="color:var(--accent)"></i> Supplier / Firm Details</h2>
+      <a href="/firms/add" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-plus"></i> Add New Firm</a>
+    </div>
+    <input type="hidden" name="firm_id" id="firm_id" value="{{ edit_data.firm_id if edit else '' }}">
+    <div class="form-grid">
+      <div class="form-group autocomplete-wrap" style="grid-column:span 2">
+        <label>Firm Name</label>
+        <input type="text" name="firm_name" id="firm_input" class="form-control"
+               placeholder="Type to search firm..." autocomplete="off"
+               value="{{ edit_data.firm_name if edit else '' }}">
+        <div class="autocomplete-list" id="firm_list" style="display:none"></div>
+      </div>
+      <div class="form-group">
+        <label>Firm GST No</label>
+        <input type="text" name="firm_gst_no" id="firm_gst_no" class="form-control"
+               value="{{ edit_data.firm_gst_no if edit else '' }}">
+      </div>
+      <div class="form-group">
+        <label>Firm Mobile</label>
+        <input type="text" name="firm_mobile" id="firm_mobile" class="form-control"
+               value="{{ edit_data.firm_mobile if edit else '' }}">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:14px">
+      <label>Firm Address</label>
+      <textarea name="firm_address" id="firm_address" class="form-control" rows="2">{{ edit_data.firm_address if edit else '' }}</textarea>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:30px">
+    <a href="/purchase/report" class="btn btn-outline"><i class="fa-solid fa-list"></i> All Purchases</a>
+    {% if not edit %}
+    <button type="button" onclick="document.getElementById('purchaseForm').reset();calcGST();" class="btn btn-outline">
+      <i class="fa-solid fa-rotate-left"></i> Reset
+    </button>
+    {% endif %}
+    <button type="submit" class="btn btn-primary" style="padding:10px 28px;font-size:15px">
+      <i class="fa-solid fa-floppy-disk"></i> {% if edit %}Update & Print{% else %}Save & Print{% endif %}
+    </button>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const itemNames = {{ items | map(attribute='item_name') | list | tojson }};
+const itemMeta = {};
+{% for item in items %}
+itemMeta[{{ item.item_name | tojson }}] = { hsn: {{ (item.hsn or '') | tojson }}, gst: {{ item.gst_percent }} };
+{% endfor %}
+
+initAutocomplete('item_input', 'item_list', itemNames, function(name) {
+  const meta = itemMeta[name];
+  if (meta) {
+    if (meta.hsn) document.getElementById('hsn').value = meta.hsn;
+    document.getElementById('gst_percent').value = meta.gst;
+    calcGST();
+  }
+});
+
+const firmNames = {{ firms | map(attribute='firm_name') | list | tojson }};
+const firmData = {};
+{% for f in firms %}
+firmData[{{ f.firm_name | tojson }}] = { id: {{ f.id | tojson }}, address: {{ (f.firm_address or '') | tojson }}, gst: {{ (f.firm_gst_no or '') | tojson }}, mobile: {{ (f.firm_mobile or '') | tojson }} };
+{% endfor %}
+
+initAutocomplete('firm_input', 'firm_list', firmNames, function(name) {
+  const f = firmData[name];
+  if (f) {
+    document.getElementById('firm_id').value = f.id;
+    document.getElementById('firm_address').value = f.address;
+    document.getElementById('firm_gst_no').value = f.gst;
+    document.getElementById('firm_mobile').value = f.mobile;
+  }
+});
+
+function calcGST() {
+  const up = parseFloat(document.getElementById('unit_price').value) || 0;
+  const qty = parseInt(document.getElementById('qty').value) || 1;
+  const gst = parseFloat(document.getElementById('gst_percent').value) || 0;
+  const total = up * qty;
+  const exGST = total / (1 + gst / 100);
+  const gstAmt = total - exGST;
+  const half = gstAmt / 2;
+  document.getElementById('price_ex').textContent = '₹' + Math.round(exGST).toLocaleString('en-IN');
+  document.getElementById('cgst_label').textContent = (gst / 2).toFixed(0);
+  document.getElementById('sgst_label').textContent = (gst / 2).toFixed(0);
+  document.getElementById('cgst_amt').textContent = '₹' + half.toFixed(1);
+  document.getElementById('sgst_amt').textContent = '₹' + half.toFixed(1);
+  document.getElementById('gst_total').textContent = '₹' + gstAmt.toFixed(1);
+  document.getElementById('grand_total').textContent = '₹' + total.toLocaleString('en-IN');
+}
+{% if edit %}
+document.addEventListener('DOMContentLoaded', function() { calcGST(); });
+{% endif %}
+</script>
+{% endblock %}

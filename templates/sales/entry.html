@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit_data %}Edit Sale – Sugandha{% else %}Sales Entry – Sugandha{% endif %}{% endblock %}
+{% block page_title %}{% if edit_data %}Edit Invoice #{{ edit_data.bill_no }}{% else %}New Sales Entry{% endif %}{% endblock %}
+{% block content %}
+{% set edit = edit_data is not none %}
+<form method="POST" action="{{ '/sales/update/' ~ edit_data.id if edit else '/sales/save' }}" id="salesForm">
+  <div class="card">
+    <div class="card-header"><h2><i class="fa-solid fa-receipt" style="color:var(--success)"></i> Invoice Details</h2></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Invoice Date *</label><input type="date" name="sell_date" class="form-control" value="{{ edit_data.sell_date if edit else today }}" required></div>
+      <div class="form-group"><label>Invoice No</label><input type="text" class="form-control" placeholder="{% if edit %}{{ edit_data.bill_no }}{% else %}Auto on Save{% endif %}" readonly style="background:#f8faff;color:var(--muted)"></div>
+      <div class="form-group"><label>Reverse Charge (Y/N)</label><select name="reverse_charge" class="form-control">
+        <option value="N" {% if not edit or edit_data.reverse_charge == 'N' %}selected{% endif %}>N</option>
+        <option value="Y" {% if edit and edit_data.reverse_charge == 'Y' %}selected{% endif %}>Y</option>
+      </select></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-mobile-alt" style="color:var(--accent2)"></i> Invoice Items</h2>
+      <button type="button" class="btn btn-outline btn-sm" onclick="addItemRow()">
+        <i class="fa-solid fa-plus"></i> Add Another Item
+      </button>
+    </div>
+
+    <div id="itemsContainer">
+    </div>
+
+    <div class="gst-box" style="margin-top:18px">
+      <div class="gst-item"><label>Total Taxable Value</label><span id="sum_price_ex">₹0</span></div>
+      <div class="gst-item"><label>Total CGST</label><span id="sum_cgst">₹0.0</span></div>
+      <div class="gst-item"><label>Total SGST</label><span id="sum_sgst">₹0.0</span></div>
+      <div class="gst-item"><label>Total GST</label><span id="sum_gst_total">₹0</span></div>
+      <div class="total-box" style="margin-left:auto"><div class="label">NET AMOUNT</div><div class="amount" id="sum_grand_total">₹0</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2><i class="fa-solid fa-user" style="color:var(--accent)"></i> Customer Details</h2></div>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:span 2"><label>Customer Name *</label><input type="text" name="customer_name" class="form-control" placeholder="Full name" required value="{{ edit_data.customer_name if edit else '' }}"></div>
+      <div class="form-group"><label>Customer Mobile</label><input type="text" name="customer_mobile" class="form-control" placeholder="Mobile No" value="{{ edit_data.customer_mobile if edit else '' }}"></div>
+    </div>
+    <div class="form-grid-2" style="margin-top:14px">
+      <div class="form-group"><label>Customer Address</label><input type="text" name="customer_address" class="form-control" placeholder="Address" value="{{ edit_data.customer_address if edit else '' }}"></div>
+      <div class="form-group"><label>Customer GST No</label><input type="text" name="gst_no" class="form-control" placeholder="Leave 0 for retail" value="{{ edit_data.gst_no if edit else '' }}"></div>
+    </div>
+    <div class="form-group" style="margin-top:14px;max-width:200px"><label>Sold By</label><input type="text" name="sold_by" class="form-control" value="{{ edit_data.sold_by if edit else 'MR.' }}"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2><i class="fa-solid fa-credit-card" style="color:var(--accent)"></i> Payment & EMI</h2></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Payment Mode *</label><select name="payment_type" id="payment_type" class="form-control" onchange="toggleEMI()" required>
+        <option value="CASH" {% if not edit or edit_data.payment_type == 'CASH' %}selected{% endif %}>CASH</option>
+        <option value="ONLINE" {% if edit and edit_data.payment_type == 'ONLINE' %}selected{% endif %}>ONLINE / UPI</option>
+        <option value="CARD" {% if edit and edit_data.payment_type == 'CARD' %}selected{% endif %}>CARD / PINE LABS</option>
+        <option value="CHEQUE" {% if edit and edit_data.payment_type == 'CHEQUE' %}selected{% endif %}>CHEQUE</option>
+        <option value="EMI" {% if edit and edit_data.payment_type == 'EMI' %}selected{% endif %}>EMI (FINANCED)</option>
+        <option value="CONSUMER" {% if edit and edit_data.payment_type == 'CONSUMER' %}selected{% endif %}>CONSUMER'S</option>
+      </select></div>
+      <div class="form-group"><label>Loan No</label><input type="text" name="loan_no" id="loan_no" class="form-control" placeholder="Loan ref no" value="{{ edit_data.loan_no if edit else '' }}" {% if not edit or edit_data.payment_type not in ['EMI','CONSUMER'] %}disabled{% endif %}></div>
+      <div class="form-group"><label>Loan From</label><input type="text" name="loan_from" id="loan_from" class="form-control" placeholder="HOME CREDIT / BAJAJ etc." value="{{ edit_data.loan_from if edit else '' }}" {% if not edit or edit_data.payment_type not in ['EMI','CONSUMER'] %}disabled{% endif %}></div>
+      <div class="form-group"><label>Downpayment (₹)</label><input type="number" name="downpayment" id="downpayment" class="form-control" value="{{ edit_data.downpayment if edit else 0 }}" {% if not edit or edit_data.payment_type not in ['EMI','CONSUMER'] %}disabled{% endif %}></div>
+      <div class="form-group"><label>EMI Amount (₹)</label><input type="number" name="emi_amount" id="emi_amount" class="form-control" value="{{ edit_data.emi_amount if edit else 0 }}" {% if not edit or edit_data.payment_type not in ['EMI','CONSUMER'] %}disabled{% endif %}></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:flex-end">
+    <a href="/sales/report" class="btn btn-outline"><i class="fa-solid fa-list"></i> All Sales</a>
+    {% if not edit %}
+    <button type="button" onclick="resetSalesForm()" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+    {% endif %}
+    <button type="submit" class="btn btn-success" style="padding:10px 28px;font-size:15px"><i class="fa-solid fa-floppy-disk"></i> {% if edit %}Update & Print Invoice{% else %}Save & Print Invoice{% endif %}</button>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+const masterItemNames = {{ master_items | map(attribute='item_name') | list | tojson }};
+const masterItemData = {};
+{% for item in master_items %}masterItemData[{{ item.item_name | tojson }}] = { hsn: {{ (item.hsn or '') | tojson }}, gst: {{ item.gst_percent }} };
+{% endfor %}
+
+const GST_OPTIONS = [
+  { v: 0,  l: '0%' },
+  { v: 5,  l: '5%' },
+  { v: 12, l: '12%' },
+  { v: 18, l: '18%' },
+  { v: 28, l: '28%' },
+];
+
+let rowCounter = 0;
+
+function makeItemRow(data, idx) {
+  const rid = 'row' + (rowCounter++);
+  const d = data || {};
+  const gst = (d.gst_percent !== undefined) ? d.gst_percent : 12;
+  const qty = d.sell_qty || 1;
+  const up  = d.unit_price != null ? d.unit_price : '';
+  const ex  = d.price_without_gst || 0;
+  const ga  = d.gst_amount || 0;
+  const total = d.total_price != null ? d.total_price : 0;
+  const half = ga / 2;
+
+  const gstOpts = GST_OPTIONS.map(o =>
+    `<option value="${o.v}" ${o.v == gst ? 'selected' : ''}>${o.l}</option>`
+  ).join('');
+
+  const rowHtml = `
+    <div class="item-row" id="${rid}" style="border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;background:#fafbff;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--primary);font-size:15px">
+          <i class="fa-solid fa-box" style="color:var(--accent2)"></i> Item #<span class="row-num">${idx+1}</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-danger remove-row" title="Remove this item" onclick="removeItemRow('${rid}')" style="padding:4px 9px">
+          <i class="fa-solid fa-trash-can"></i> Remove
+        </button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group autocomplete-wrap" style="grid-column:span 2">
+          <label>Description of Goods *</label>
+          <input type="text" name="items[item_name][]" class="form-control item-name"
+                 placeholder="Type item..." required autocomplete="off"
+                 value="${d.item_name || ''}">
+          <div class="autocomplete-list" style="display:none"></div>
+        </div>
+        <div class="form-group">
+          <label>HSN Code</label>
+          <input type="text" name="items[hsn][]" class="form-control item-hsn" placeholder="85171300" value="${d.hsn || ''}">
+        </div>
+        <div class="form-group">
+          <label>Color/RAM/Storage</label>
+          <input type="text" name="items[color][]" class="form-control item-color" placeholder="e.g. Black/128/6" value="${d.color || ''}">
+        </div>
+        <div class="form-group">
+          <label>IMEI Number</label>
+          <input type="text" name="items[imei][]" class="form-control item-imei" placeholder="15-digit IMEI" value="${d.imei || ''}">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" name="items[sell_qty][]" class="form-control item-qty" value="${qty}" min="1">
+        </div>
+        <div class="form-group">
+          <label>Rate (incl. GST) *</label>
+          <input type="number" name="items[unit_price][]" class="form-control item-price" placeholder="0" step="1" required value="${up}">
+        </div>
+        <div class="form-group">
+          <label>GST %</label>
+          <select name="items[gst_percent][]" class="form-control item-gst">${gstOpts}</select>
+        </div>
+      </div>
+      <div class="stock-panel" style="display:none;margin-top:10px">
+        <div class="form-section">
+          <div class="form-section-title"><i class="fa-solid fa-boxes-stacked"></i> Available Stock — Click to Select</div>
+          <div class="stock-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </div>
+      <div class="gst-box" style="margin-top:12px;padding:10px 14px">
+        <div class="gst-item"><label>Taxable</label><span class="l-ex">₹${Math.round(ex).toLocaleString('en-IN')}</span></div>
+        <div class="gst-item"><label>CGST <span class="l-cgstp">${(gst/2).toFixed(0)}</span>%</label><span class="l-cgsta">₹${half.toFixed(1)}</span></div>
+        <div class="gst-item"><label>SGST <span class="l-sgstp">${(gst/2).toFixed(0)}</span>%</label><span class="l-sgsta">₹${half.toFixed(1)}</span></div>
+        <div class="gst-item"><label>GST</label><span class="l-gst">₹${ga.toFixed(1)}</span></div>
+        <div class="total-box" style="margin-left:auto;padding:8px 14px">
+          <div class="label" style="font-size:10px">LINE TOTAL</div>
+          <div class="amount l-total" style="font-size:22px">₹${total.toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  const temp = document.createElement('div');
+  temp.innerHTML = rowHtml.trim();
+  const rowEl = temp.firstChild;
+  document.getElementById('itemsContainer').appendChild(rowEl);
+  wireRowEvents(rowEl);
+  return rowEl;
+}
+
+function wireRowEvents(rowEl) {
+  const nameEl = rowEl.querySelector('.item-name');
+  const autoList = rowEl.querySelector('.autocomplete-list');
+  const hsnEl  = rowEl.querySelector('.item-hsn');
+  const colorEl = rowEl.querySelector('.item-color');
+  const imeiEl = rowEl.querySelector('.item-imei');
+  const qtyEl  = rowEl.querySelector('.item-qty');
+  const priceEl = rowEl.querySelector('.item-price');
+  const gstEl  = rowEl.querySelector('.item-gst');
+  const stockPanel = rowEl.querySelector('.stock-panel');
+  const stockList = rowEl.querySelector('.stock-list');
+
+  function recalc() {
+    const up = parseFloat(priceEl.value) || 0;
+    const qty = parseInt(qtyEl.value) || 1;
+    const gst = parseFloat(gstEl.value) || 0;
+    const total = up * qty;
+    const exGST = total / (1 + gst / 100);
+    const gstAmt = total - exGST;
+    const half = gstAmt / 2;
+    rowEl.querySelector('.l-ex').textContent = '₹' + Math.round(exGST).toLocaleString('en-IN');
+    rowEl.querySelector('.l-cgstp').textContent = (gst/2).toFixed(0);
+    rowEl.querySelector('.l-sgstp').textContent = (gst/2).toFixed(0);
+    rowEl.querySelector('.l-cgsta').textContent = '₹' + half.toFixed(1);
+    rowEl.querySelector('.l-sgsta').textContent = '₹' + half.toFixed(1);
+    rowEl.querySelector('.l-gst').textContent = '₹' + gstAmt.toFixed(1);
+    rowEl.querySelector('.l-total').textContent = '₹' + total.toLocaleString('en-IN');
+    recomputeGrandTotals();
+  }
+
+  [qtyEl, priceEl, gstEl].forEach(el => el.addEventListener('input', recalc));
+  [qtyEl, priceEl, gstEl].forEach(el => el.addEventListener('change', recalc));
+
+  // Autocomplete
+  let activeIdx = -1;
+  nameEl.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    autoList.innerHTML = ''; activeIdx = -1;
+    if (!q) { autoList.style.display = 'none'; return; }
+    const matches = masterItemNames.filter(d => d.toLowerCase().includes(q)).slice(0, 20);
+    if (!matches.length) { autoList.style.display = 'none'; return; }
+    matches.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.textContent = m; div.dataset.idx = i;
+      div.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        nameEl.value = m; autoList.style.display = 'none';
+        onNameSelected(m);
+      });
+      autoList.appendChild(div);
+    });
+    autoList.style.display = 'block';
+  });
+  nameEl.addEventListener('keydown', function(e) {
+    const items = autoList.querySelectorAll('div');
+    if (e.key === 'ArrowDown') activeIdx = Math.min(activeIdx+1, items.length-1);
+    else if (e.key === 'ArrowUp') activeIdx = Math.max(activeIdx-1, -1);
+    else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); items[activeIdx].dispatchEvent(new Event('mousedown')); return; }
+    else if (e.key === 'Escape') autoList.style.display = 'none';
+    items.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+  });
+  document.addEventListener('click', function(e) {
+    if (!nameEl.contains(e.target) && !autoList.contains(e.target)) autoList.style.display = 'none';
+  });
+
+  function onNameSelected(name) {
+    const meta = masterItemData[name];
+    if (meta) {
+      if (meta.hsn) hsnEl.value = meta.hsn;
+      gstEl.value = meta.gst;
+      recalc();
+    }
+    fetch('/sales/api/item-stock?name=' + encodeURIComponent(name)).then(r => r.json()).then(data => {
+      stockList.innerHTML = '';
+      if (data.master && data.master.hsn) hsnEl.value = data.master.hsn;
+      if (data.master && data.master.gst_percent) { gstEl.value = data.master.gst_percent; recalc(); }
+      if (data.items.length) {
+        data.items.forEach(item => {
+          const btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'btn btn-outline btn-sm';
+          btn.innerHTML = `<i class="fa-solid fa-sim-card"></i> ${item.color||'—'} | IMEI: <strong>${item.imei||'N/A'}</strong>`;
+          btn.onclick = function() {
+            imeiEl.value = item.imei || '';
+            colorEl.value = item.color || '';
+            stockList.querySelectorAll('button').forEach(b => b.style.background = '');
+            btn.style.background = '#dbeafe';
+          };
+          stockList.appendChild(btn);
+        });
+        stockPanel.style.display = 'block';
+      } else { stockPanel.style.display = 'none'; }
+    });
+  }
+
+  recalc();
+}
+
+function removeItemRow(rid) {
+  const rows = document.querySelectorAll('#itemsContainer .item-row');
+  if (rows.length <= 1) {
+    alert('Invoice must have at least one item.');
+    return;
+  }
+  const el = document.getElementById(rid);
+  if (el) el.remove();
+  renumberRows();
+  recomputeGrandTotals();
+}
+
+function renumberRows() {
+  document.querySelectorAll('#itemsContainer .item-row .row-num').forEach((el, i) => {
+    el.textContent = i + 1;
+  });
+}
+
+function recomputeGrandTotals() {
+  let sumEx = 0, sumGst = 0, sumTotal = 0;
+  document.querySelectorAll('#itemsContainer .item-row').forEach(row => {
+    const priceEl = row.querySelector('.item-price');
+    const qtyEl = row.querySelector('.item-qty');
+    const gstEl = row.querySelector('.item-gst');
+    const up = parseFloat(priceEl.value) || 0;
+    const qty = parseInt(qtyEl.value) || 1;
+    const gst = parseFloat(gstEl.value) || 0;
+    const total = up * qty;
+    const ex = total / (1 + gst / 100);
+    const ga = total - ex;
+    sumEx += ex; sumGst += ga; sumTotal += total;
+  });
+  const half = sumGst / 2;
+  document.getElementById('sum_price_ex').textContent = '₹' + Math.round(sumEx).toLocaleString('en-IN');
+  document.getElementById('sum_cgst').textContent = '₹' + half.toFixed(1);
+  document.getElementById('sum_sgst').textContent = '₹' + half.toFixed(1);
+  document.getElementById('sum_gst_total').textContent = '₹' + sumGst.toFixed(1);
+  document.getElementById('sum_grand_total').textContent = '₹' + sumTotal.toLocaleString('en-IN');
+}
+
+function addItemRow(data) {
+  const rows = document.querySelectorAll('#itemsContainer .item-row');
+  const row = makeItemRow(data || {}, rows.length);
+  renumberRows();
+  recomputeGrandTotals();
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function toggleEMI() {
+  const isEMI = ['EMI','CONSUMER'].includes(document.getElementById('payment_type').value);
+  ['loan_no','loan_from','downpayment','emi_amount'].forEach(id => {
+    const el = document.getElementById(id);
+    el.disabled = !isEMI;
+    if (!isEMI) el.value = (id in ['loan_no','loan_from'] ? '' : '0');
+  });
+}
+
+function resetSalesForm() {
+  if (!confirm('Reset the entire form? This will clear all items and customer details.')) return;
+  document.getElementById('salesForm').reset();
+  const container = document.getElementById('itemsContainer');
+  container.innerHTML = '';
+  addItemRow();
+  toggleEMI();
+}
+
+// Bootstrap: render initial rows from template data
+document.addEventListener('DOMContentLoaded', function() {
+  const initial = {{ invoice_items | tojson }};
+  const container = document.getElementById('itemsContainer');
+  container.innerHTML = '';
+  if (initial && initial.length) {
+    initial.forEach((d, i) => makeItemRow(d, i));
+  } else {
+    makeItemRow({}, 0);
+  }
+  renumberRows();
+  recomputeGrandTotals();
+  toggleEMI();
+});
+</script>
+{% endblock %}

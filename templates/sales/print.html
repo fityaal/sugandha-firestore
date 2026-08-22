@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% block title %}Invoice {{ s.bill_no }} – Sugandha Enterprises{% endblock %}
+{% block page_title %}Tax Invoice No. {{ s.bill_no }}{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+  .sidebar,.topbar,.no-print { display:none!important }
+  .main { margin-left:0!important }
+  .content { padding:0!important }
+  body { background:#fff!important }
+  .invoice-wrap { max-width:100%!important; box-shadow:none!important; border:none!important }
+}
+.invoice-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1.5px solid #999;
+  padding: 0;
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 12px;
+  color: #000;
+}
+.inv-header { display:grid; grid-template-columns:170px 1fr; align-items:center; padding:10px 14px; border-bottom:1.5px solid #333; gap:12px }
+.inv-logo-img { max-width:160px; max-height:75px; width:auto; height:auto; display:block }
+.inv-title h1 { font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;letter-spacing:1px;margin:0 }
+.inv-title p { font-size:11px;margin:1px 0;color:#333 }
+.inv-subtitle { text-align:center;font-size:14px;font-weight:700;letter-spacing:2px;padding:5px;border-bottom:1.5px solid #333;border-top:1px solid #333 }
+.inv-row { display:grid; padding:4px 14px; gap:4px }
+.inv-2col { grid-template-columns: 1fr 1fr }
+.inv-3col { grid-template-columns: 2fr 1fr 1fr }
+.inv-field { font-size:12px }
+.inv-field label { font-weight:600; margin-right:4px }
+.inv-field span { border-bottom:1px solid #999; display:inline-block; min-width:120px; padding:0 4px }
+.inv-divider { border-top:1px solid #666; margin:0 }
+table.inv-table { width:100%; border-collapse:collapse; font-size:12px }
+table.inv-table th { background:#f0f0f0; border:1px solid #888; padding:5px 7px; text-align:center; font-weight:700; font-size:11px }
+table.inv-table td { border:1px solid #888; padding:5px 7px; vertical-align:top }
+table.inv-table td.center { text-align:center }
+table.inv-table td.right { text-align:right }
+.inv-summary { display:grid; grid-template-columns:1fr 200px; border-top:1.5px solid #333 }
+.inv-summary-left { border-right:1px solid #888; padding:8px 14px; font-size:12px }
+.inv-summary-right { padding:0 }
+.sum-row { display:grid; grid-template-columns:1fr auto; padding:3px 10px; border-bottom:1px solid #ddd; font-size:12px }
+.sum-row.total-row { font-weight:700; font-size:13px; background:#f8f8f8; border-top:1.5px solid #333 }
+.inv-footer { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #888; min-height:80px }
+.inv-footer-left { padding:8px 14px; border-right:1px solid #888; font-size:11px }
+.inv-footer-right { padding:8px 14px; text-align:right; font-size:11px }
+.inv-sign { margin-top:30px; font-weight:700; font-size:11px }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-print" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+  <button onclick="window.print()" class="btn btn-print" style="font-size:15px;padding:10px 24px">
+    <i class="fa-solid fa-print"></i> Print Invoice
+  </button>
+  <button onclick="sendWhatsApp()" class="btn" style="background:#25d366;color:#fff;font-size:15px;padding:10px 24px"
+          {% if not s.customer_mobile %}title="No mobile number saved for this customer"{% endif %}>
+    <i class="fa-brands fa-whatsapp"></i> Send on WhatsApp
+  </button>
+  <a href="/sales/" class="btn btn-success"><i class="fa-solid fa-plus"></i> New Sale</a>
+  <a href="/sales/report" class="btn btn-outline"><i class="fa-solid fa-list"></i> All Sales</a>
+</div>
+
+<!-- WhatsApp mobile override modal -->
+<div id="wa-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <h3 style="font-family:'Rajdhani',sans-serif;font-size:20px;margin-bottom:4px;color:#1a2744">
+      <i class="fa-brands fa-whatsapp" style="color:#25d366"></i> Send Invoice on WhatsApp
+    </h3>
+    <p style="font-size:12px;color:#6b7a99;margin-bottom:16px">Enter customer WhatsApp number</p>
+    <input id="wa-number" type="tel" placeholder="e.g. 9876543210"
+           value="{{ s.customer_mobile or '' }}"
+           style="width:100%;padding:10px 12px;border:1.5px solid #dde3f0;border-radius:8px;font-size:15px;margin-bottom:14px">
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('wa-modal').style.display='none'"
+              style="flex:1;padding:10px;border:1.5px solid #dde3f0;border-radius:8px;background:#fff;cursor:pointer;font-size:14px">
+        Cancel
+      </button>
+      <button onclick="openWhatsApp()"
+              style="flex:2;padding:10px;background:#25d366;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700">
+        <i class="fa-brands fa-whatsapp"></i> Open WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="invoice-wrap" id="invoice">
+
+  <!-- HEADER -->
+  <div class="inv-header">
+    <div class="inv-logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Sugandha Mobile" class="inv-logo-img">
+    </div>
+    <div class="inv-title">
+      <h1>{{ shop.shop_name if shop else 'SUGANDHA ENTERPRISES' }}</h1>
+      <p>{{ shop.shop_address if shop and shop.shop_address else '03, Shubhrambh Society, Shivshakti Nagar, Dattawadi, Nagpur 440023' }}</p>
+      <p>Mobile No: {{ shop.shop_mobile if shop and shop.shop_mobile else '9766773431' }} &nbsp;&nbsp;&nbsp; GST No: {{ shop.shop_gst_no if shop and shop.shop_gst_no else '27APXPT2290K1ZX' }}</p>
+    </div>
+  </div>
+
+  <div class="inv-subtitle">TAX INVOICE</div>
+
+  <!-- CUSTOMER ROW 1 -->
+  <div class="inv-row inv-2col" style="padding-top:6px">
+    <div class="inv-field"><label>Customer Name:</label> <span>{{ s.customer_name or '' }}</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <div class="inv-field"><label>Reverse Charge (Y/N):</label> <span>{{ s.reverse_charge or 'N' }}</span></div>
+      <div></div>
+    </div>
+  </div>
+  <div class="inv-row" style="grid-template-columns:1fr 1fr;padding-top:2px">
+    <div></div>
+    <div class="inv-row" style="grid-template-columns:auto 1fr;padding:0;gap:8px">
+      <div class="inv-field"><label>Invoice No:</label></div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700">{{ s.bill_no }}</div>
+    </div>
+  </div>
+  <div class="inv-row inv-2col" style="padding-top:2px">
+    <div class="inv-field"><label>Customer Address:</label> <span>{{ s.customer_address or '' }}</span></div>
+    <div class="inv-row" style="grid-template-columns:1fr 1fr;padding:0;gap:8px">
+      <div class="inv-field"><label>Invoice Date:</label> <span>{{ s.sell_date | format_date }}</span></div>
+      <div class="inv-field"><label>State Code:</label> <span>{{ shop.state_code if shop and shop.state_code else '27' }}</span></div>
+    </div>
+  </div>
+  <div class="inv-row inv-2col" style="padding-top:2px;padding-bottom:6px">
+    <div class="inv-field"><label>Customer GST No:</label> <span>{{ s.gst_no or '0' }}</span> &nbsp;&nbsp; <label>Cust. Mob No:</label> <span>{{ s.customer_mobile or '' }}</span></div>
+    <div></div>
+  </div>
+  <hr class="inv-divider">
+
+  <!-- ITEM TABLE -->
+  <table class="inv-table">
+    <thead>
+      <tr>
+        <th style="width:30px">SN</th>
+        <th>Description of Goods</th>
+        <th style="width:80px">HSN Code</th>
+        <th style="width:35px">Qty</th>
+        <th style="width:60px">Rate</th>
+        <th style="width:60px">Taxable Value</th>
+        <th style="width:40px">CGST%</th>
+        <th style="width:50px">Amt</th>
+        <th style="width:40px">SGST%</th>
+        <th style="width:50px">Amt</th>
+        <th style="width:70px">Net Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set has_items_key = 'items' in s and s['items'] is iterable and s['items'] is not string and s['items']|length > 0 %}
+      {% set items = s['items'] if has_items_key else [s] %}
+      {% set total_ex = 0 %}
+      {% set total_gst = 0 %}
+      {% set total_amt = 0 %}
+      {% for it in items %}
+      <tr>
+        <td class="center">{{ loop.index }}.</td>
+        <td>
+          <strong>{{ it.item_name }}</strong>
+          {% if it.color or it.imei %}
+          <br>
+          {% if it.color %}<small>Color/RAM/STORAGE &nbsp; {{ it.color }}</small><br>{% endif %}
+          {% if it.imei %}<small>IMEI NO: &nbsp;&nbsp;&nbsp; {{ it.imei }}</small>{% endif %}
+          {% endif %}
+        </td>
+        <td class="center">{{ it.hsn or '' }}</td>
+        <td class="center">{{ it.sell_qty }}</td>
+        <td class="right">{{ (it.unit_price or 0) | int }}</td>
+        <td class="right">{{ (it.price_without_gst or 0) | int }}</td>
+        <td class="center">{{ ((it.gst_percent or 12)/2) | int }}</td>
+        <td class="right">{{ ((it.gst_amount or 0)/2) | round(1) }}</td>
+        <td class="center">{{ ((it.gst_percent or 12)/2) | int }}</td>
+        <td class="right">{{ ((it.gst_amount or 0)/2) | round(1) }}</td>
+        <td class="right"><strong>{{ (it.total_price or 0) | int }}</strong></td>
+      </tr>
+      {% endfor %}
+      {% set blank_rows = (7 - items|length)|int %}
+      {% if blank_rows > 0 %}
+      {% for _ in range(0, blank_rows) %}
+      <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- SUMMARY SECTION -->
+  {% set gross = s.price_without_gst if s.price_without_gst else items|sum(attribute='price_without_gst') %}
+  {% set gst_sum = s.gst_amount if s.gst_amount else items|sum(attribute='gst_amount') %}
+  {% set net_total = s.total_price if s.total_price else items|sum(attribute='total_price') %}
+  {% set _ = 0 %}
+  {#- Items array is already defined above using safe bracket access -#}
+  <div class="inv-summary">
+    <div class="inv-summary-left">
+      <div style="margin-bottom:6px"><label style="font-weight:700">Amount (in Words):</label>&nbsp; {{ amount_words(net_total or 0) | upper }}.</div>
+      <hr style="border:none;border-top:1px solid #ccc;margin:6px 0">
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px;font-size:12px">
+        <span style="font-weight:600">Payment Mode:</span> <span>{{ s.payment_type or 'CASH' }}</span>
+        <span style="font-weight:600">Loan No:</span> <span>{{ s.loan_no or '0' }}</span>
+        <span style="font-weight:600">Loan From:</span> <span>{{ s.loan_from or '' }}</span>
+        <span style="font-weight:600">Downpayment:</span> <span>{{ (s.downpayment or 0) | int }}</span>
+        <span style="font-weight:600">EMI:</span> <span>{{ (s.emi_amount or 0) | int }}</span>
+      </div>
+      <hr style="border:none;border-top:1px solid #ccc;margin:6px 0">
+      <div><span style="font-weight:600">Sold by:</span> {{ s.sold_by or 'MR.' }}</div>
+    </div>
+    <div class="inv-summary-right">
+      <div class="sum-row"><span>Gross Amount:</span><span>{{ (gross or 0) | int }}</span></div>
+      <div class="sum-row"><span>CGST Amount:</span><span>{{ ((gst_sum or 0)/2) | round(1) }}</span></div>
+      <div class="sum-row"><span>SGST Amount:</span><span>{{ ((gst_sum or 0)/2) | round(1) }}</span></div>
+      <div class="sum-row total-row"><span>Total Amount to be Paid:</span><span>{{ (net_total or 0) | int }}</span></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="inv-footer">
+    <div class="inv-footer-left">
+      <strong>Terms &amp; Conditions:</strong>
+      <ol style="margin:4px 0 0 14px;padding:0;font-size:10px;line-height:1.6">
+        <li>Subject to Nagpur Jurisdiction</li>
+        <li>Warranty covered by Company at service centres &amp; is not out risk, I accept this condition.</li>
+        <li>No Claim, No Return, No Exchange</li>
+        <li>Goods once sold will not be taken back or exchanged. Interest 24% p.a will be charged in all invoices not paid within 15 days</li>
+      </ol>
+    </div>
+    <div class="inv-footer-right">
+      <div style="margin-bottom:4px">For</div>
+      <div style="font-weight:700;font-size:12px">{{ shop.shop_name if shop else 'Sugandha Enterprises' }}</div>
+      <div style="margin-top:36px;border-top:1px solid #333;padding-top:4px;display:inline-block">
+        <div>Customer Signature</div>
+      </div>
+      <div style="margin-top:0;padding-top:4px;display:inline-block;margin-left:20px">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+        <div style="border-top:1px solid #333;padding-top:4px">Authorised Signatory</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const custMobile = "{{ s.customer_mobile or '' }}".replace(/\D/g,'');
+const custName   = "{{ s.customer_name or 'Customer' }}";
+const billNo     = "{{ s.bill_no }}";
+{% set has_items_key = 'items' in s and s['items'] is iterable and s['items'] is not string and s['items']|length > 0 %}
+{% set items_for_wa = s['items'] if has_items_key else [s] %}
+const itemCount  = {{ items_for_wa|length }};
+const firstItem  = "{{ items_for_wa[0].item_name }}";
+const itemList   = [{% for it in items_for_wa %}{{ it.item_name | tojson }}{% if not loop.last %},{% endif %}{% endfor %}];
+const amount     = "{{ (s.total_price or 0) | int }}";
+const shopName   = "{{ shop.shop_name if shop else 'Sugandha Enterprises' }}";
+
+function buildMessage(mobile) {
+  let itemsLine;
+  if (itemCount === 1) {
+    itemsLine = `📱 *Item:* ${firstItem}`;
+  } else {
+    const lines = itemList.map((n, i) => `    ${i+1}. ${n}`).join('\\n');
+    itemsLine = `📦 *Items (${itemCount}):*\\n${lines}`;
+  }
+  return `Dear ${custName},
+
+Thank you for your purchase at *${shopName}*!
+
+🧾 *Invoice No:* ${billNo}
+${itemsLine}
+💰 *Amount Paid:* ₹${parseInt(amount).toLocaleString('en-IN')}
+
+For any queries, please contact us.
+_Sugandha Enterprises, Nagpur_`;
+}
+
+function sendWhatsApp() {
+  if (custMobile && custMobile.length >= 10) {
+    // Number already on record — open directly
+    openWhatsAppWithNumber(custMobile);
+  } else {
+    // No number saved — show modal to enter it
+    document.getElementById('wa-modal').style.display = 'flex';
+    document.getElementById('wa-number').focus();
+  }
+}
+
+function openWhatsApp() {
+  const raw = document.getElementById('wa-number').value.replace(/\D/g,'');
+  if (raw.length < 10) { alert('Please enter a valid 10-digit mobile number.'); return; }
+  document.getElementById('wa-modal').style.display = 'none';
+  openWhatsAppWithNumber(raw);
+}
+
+function openWhatsAppWithNumber(number) {
+  // Add India country code if not already present
+  const full = number.startsWith('91') && number.length === 12 ? number : '91' + number.slice(-10);
+  const msg  = encodeURIComponent(buildMessage(full));
+  const url  = `https://web.whatsapp.com/send?phone=${full}&text=${msg}`;
+  window.open(url, '_blank');
+}
+
+// Allow Enter key in modal
+document.addEventListener('DOMContentLoaded', function() {
+  const inp = document.getElementById('wa-number');
+  if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') openWhatsApp(); });
+});
+</script>
+{% endblock %}

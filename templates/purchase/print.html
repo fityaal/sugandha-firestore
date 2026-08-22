@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Purchase Bill {{ p.bill_no }}{% endblock %}
+{% block page_title %}Purchase Record – {{ p.bill_no }}{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+  .sidebar,.topbar,.no-print { display:none!important }
+  .main { margin-left:0!important }
+  .content { padding:0!important }
+  body { background:#fff!important }
+}
+.purch-wrap { max-width:800px; margin:0 auto; background:#fff; border:1.5px solid #999; font-family:'Noto Sans',sans-serif; font-size:12px; color:#000 }
+.purch-header { display:grid; grid-template-columns:170px 1fr; align-items:center; padding:10px 16px; border-bottom:2px solid #333; gap:12px }
+.purch-logo-img { max-width:160px; max-height:75px; width:auto; height:auto; display:block }
+.purch-title h1 { font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;margin:0 }
+.purch-title p { font-size:11px;margin:1px 0;color:#333 }
+.purch-subtitle { text-align:center;font-size:13px;font-weight:700;letter-spacing:2px;padding:5px;border-bottom:2px solid #333;background:#f8f8f8 }
+.pf { padding:4px 16px;font-size:12px;display:grid;gap:2px }
+.pf-2 { grid-template-columns:1fr 1fr }
+.pf-3 { grid-template-columns:1fr 1fr 1fr }
+.field { display:flex;gap:4px }
+.field label { font-weight:600;white-space:nowrap }
+.field span { border-bottom:1px solid #bbb;flex:1;padding:0 4px;min-width:80px }
+table.pt { width:100%;border-collapse:collapse;font-size:12px }
+table.pt th { background:#eee;border:1px solid #888;padding:5px 8px;text-align:center;font-weight:700;font-size:11px }
+table.pt td { border:1px solid #888;padding:5px 8px;vertical-align:top }
+.pt-right { text-align:right }
+.pt-center { text-align:center }
+.gst-summary { display:grid;grid-template-columns:1fr 180px;border-top:2px solid #333 }
+.gst-left { padding:10px 16px;border-right:1px solid #888 }
+.gst-right { }
+.sr { display:grid;grid-template-columns:1fr auto;padding:4px 10px;border-bottom:1px solid #ddd;font-size:12px }
+.sr.total { font-weight:700;font-size:13px;background:#f5f5f5;border-top:1.5px solid #333 }
+.footer { display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #888;min-height:70px;font-size:11px }
+.footer-l { padding:8px 16px;border-right:1px solid #888 }
+.footer-r { padding:8px 16px;text-align:right }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-print" style="display:flex;gap:10px;margin-bottom:18px">
+  <button onclick="window.print()" class="btn btn-print" style="font-size:15px;padding:10px 24px">
+    <i class="fa-solid fa-print"></i> Print
+  </button>
+  <a href="/purchase/" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Purchase</a>
+  <a href="/purchase/report" class="btn btn-outline"><i class="fa-solid fa-list"></i> All Purchases</a>
+  <a href="/sales/" class="btn btn-success"><i class="fa-solid fa-receipt"></i> New Sale</a>
+</div>
+
+<div class="purch-wrap">
+  <div class="purch-header">
+    <div class="purch-logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Sugandha Mobile" class="purch-logo-img">
+    </div>
+    <div class="purch-title">
+      <h1>{{ shop.shop_name if shop else 'SUGANDHA ENTERPRISES' }}</h1>
+      <p>{{ shop.shop_address if shop else '03, Shubhrambh Society, Shivshakti Nagar, Dattawadi, Nagpur 440023' }}</p>
+      <p>Mobile: {{ shop.shop_mobile if shop else '9766773431' }} &nbsp;&nbsp; GSTIN: {{ shop.shop_gst_no if shop else '27APXPT2290K1ZX' }}</p>
+    </div>
+  </div>
+
+  <div class="purch-subtitle">PURCHASE RECORD</div>
+
+  <div class="pf pf-2" style="padding-top:8px">
+    <div class="field"><label>Supplier:</label> <span><strong>{{ p.firm_name or '—' }}</strong></span></div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="field"><label>Bill No:</label> <span style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--primary)">{{ p.bill_no }}</span></div>
+      <div class="field"><label>Date:</label> <span>{{ p.purchase_date }}</span></div>
+    </div>
+  </div>
+  <div class="pf pf-2" style="padding-top:4px;padding-bottom:8px">
+    <div>
+      <div class="field"><label>Address:</label> <span>{{ p.firm_address or '' }}</span></div>
+      <div class="field" style="margin-top:4px"><label>GST No:</label> <span>{{ p.firm_gst_no or '' }}</span></div>
+      <div class="field" style="margin-top:4px"><label>Mobile:</label> <span>{{ p.firm_mobile or '' }}</span></div>
+    </div>
+    <div style="text-align:right;padding-right:8px">
+      <div><strong>Status:</strong>
+        {% if p.sold %}<span style="background:#fce7f3;color:#9d174d;padding:2px 10px;border-radius:4px;font-weight:700">SOLD</span>
+        {% else %}<span style="background:#dcfce7;color:#166534;padding:2px 10px;border-radius:4px;font-weight:700">IN STOCK</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <table class="pt">
+    <thead>
+      <tr>
+        <th style="width:30px">SN</th>
+        <th>Item Description</th>
+        <th style="width:80px">HSN</th>
+        <th style="width:55px">Color</th>
+        <th style="width:90px">IMEI</th>
+        <th style="width:45px">RAM</th>
+        <th style="width:55px">Storage</th>
+        <th style="width:35px">Qty</th>
+        <th style="width:70px">Unit Price</th>
+        <th style="width:80px">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="pt-center">1</td>
+        <td><strong>{{ p.item_name }}</strong></td>
+        <td class="pt-center">{{ p.hsn or '—' }}</td>
+        <td class="pt-center">{{ p.color or '—' }}</td>
+        <td style="font-size:11px">{{ p.imei or '—' }}</td>
+        <td class="pt-center">{{ p.ram or '—' }}</td>
+        <td class="pt-center">{{ p.memory or '—' }}</td>
+        <td class="pt-center">{{ p.qty }}</td>
+        <td class="pt-right">₹{{ '{:,.0f}'.format(p.unit_price or 0) }}</td>
+        <td class="pt-right"><strong>₹{{ '{:,.0f}'.format((p.unit_price or 0) * (p.qty or 1)) }}</strong></td>
+      </tr>
+      <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <div class="gst-summary">
+    <div class="gst-left">
+      <div style="font-size:11px;color:#555;margin-bottom:4px">GST Breakup</div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <tr><td style="padding:2px 0;color:#666">Taxable Value</td><td style="text-align:right">₹{{ '{:,.2f}'.format(p.price_without_gst or 0) }}</td></tr>
+        <tr><td style="padding:2px 0;color:#666">CGST @ {{ ((p.gst_percent or 12)/2)|int }}%</td><td style="text-align:right">₹{{ '{:,.2f}'.format((p.gst_amount or 0)/2) }}</td></tr>
+        <tr><td style="padding:2px 0;color:#666">SGST @ {{ ((p.gst_percent or 12)/2)|int }}%</td><td style="text-align:right">₹{{ '{:,.2f}'.format((p.gst_amount or 0)/2) }}</td></tr>
+      </table>
+    </div>
+    <div class="gst-right">
+      <div class="sr"><span>Sub-Total</span><span>₹{{ '{:,.0f}'.format(p.price_without_gst or 0) }}</span></div>
+      <div class="sr"><span>GST ({{ p.gst_percent or 12 }}%)</span><span>₹{{ '{:,.0f}'.format(p.gst_amount or 0) }}</span></div>
+      <div class="sr total"><span>TOTAL</span><span>₹{{ '{:,.0f}'.format(p.total_price or 0) }}</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-l">
+      <div><strong>This is a purchase record for internal reference.</strong></div>
+      <div style="margin-top:4px;color:#555">Generated by Sugandha Enterprises Shop Management System</div>
+    </div>
+    <div class="footer-r">
+      <div>For {{ shop.shop_name if shop else 'Sugandha Enterprises' }}</div>
+      <div style="margin-top:36px;border-top:1px solid #333;padding-top:4px;font-weight:600">Authorised Signatory</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+Flask==3.0.3
+Werkzeug==3.0.3
+python-dotenv==1.0.1
+firebase-admin==6.5.0
+gunicorn==23.0.0
+
+# --- One-time migration only (not needed to run the app itself) ---
+# mysqlclient==2.2.4
