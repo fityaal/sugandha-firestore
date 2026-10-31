@@ -124,6 +124,7 @@ def create_app():
     from routes.stock import stock_bp
     from routes.settings import settings_bp
     from routes.api import api_bp
+    from routes.reports import reports_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -133,6 +134,7 @@ def create_app():
     app.register_blueprint(sales_bp, url_prefix='/sales')
     app.register_blueprint(stock_bp, url_prefix='/stock')
     app.register_blueprint(settings_bp, url_prefix='/settings')
+    app.register_blueprint(reports_bp, url_prefix='/reports')
     app.register_blueprint(api_bp, url_prefix='/api/v1')
 
     return app
