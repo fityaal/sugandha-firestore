@@ -5,7 +5,7 @@ the exact same helper functions the web portal's routes already use
 (next_bill_no, stock/GST math, IMEI sold-flag flip) so bill numbering and
 stock never drift between the web portal and the mobile app.
 """
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, Response
 from datetime import datetime, date, timezone
 import hashlib
 
@@ -16,6 +16,7 @@ from firebase_db import invalidate_cache as _invalidate_cache
 
 import routes.purchase as purchase_logic
 import routes.sales as sales_logic
+import routes.reports as reports_logic
 
 api_bp = Blueprint('api', __name__)
 
@@ -564,6 +565,31 @@ def settings_update():
     }, merge=True)
     return jsonify({'success': True})
 
+
+
+# ------------------------------------------------------- GST reports (CA) --
+@api_bp.route('/reports/gst-summary', methods=['GET'])
+@api_login_required
+def gst_summary():
+    d_from, d_to = reports_logic.default_period()
+    from_date = request.args.get('from_date') or d_from
+    to_date = request.args.get('to_date') or d_to
+    return jsonify({'success': True, 'from_date': from_date, 'to_date': to_date,
+                     'summary': reports_logic.summaries(from_date, to_date)})
+
+
+@api_bp.route('/reports/gst-download', methods=['GET'])
+@api_login_required
+def gst_download():
+    kind = request.args.get('kind', 'sales')
+    if kind not in ('sales', 'purchase'):
+        return jsonify({'success': False, 'error': 'kind must be sales or purchase'}), 400
+    fmt = 'csv' if request.args.get('fmt') == 'csv' else 'xlsx'
+    data, mime, filename = reports_logic.make_export(
+        kind, request.args.get('from_date', ''), request.args.get('to_date', ''), fmt)
+    return Response(data, mimetype=mime, headers={
+        'Content-Disposition': f'attachment; filename="{filename}"',
+        'X-Filename': filename})
 
 # --------------------------------------------------------------- utils ----
 def _jsonable(obj):

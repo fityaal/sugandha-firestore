@@ -27,24 +27,7 @@ def index():
     firms.sort(key=lambda x: (x.get('firm_name') or '').upper())
 
     today = date.today().strftime('%Y-%m-%d')
-    return render_template('purchase/entry.html', items=items, firms=firms, today=today, edit_data=None)
-
-
-@purchase_bp.route('/edit/<id>')
-def edit(id):
-    doc = db.collection('purchases').document(id).get()
-    if not doc.exists:
-        flash('Purchase not found', 'danger')
-        return redirect(url_for('purchase.report'))
-    p = {**doc.to_dict(), 'id': doc.id}
-
-    items = docs_to_list(db.collection('items').stream())
-    items.sort(key=lambda x: (x.get('item_name') or '').upper())
-
-    firms = docs_to_list(db.collection('firms').stream())
-    firms.sort(key=lambda x: (x.get('firm_name') or '').upper())
-
-    return render_template('purchase/entry.html', items=items, firms=firms, today=p.get('purchase_date', date.today().strftime('%Y-%m-%d')), edit_data=p)
+    return render_template('purchase/entry.html', items=items, firms=firms, today=today)
 
 
 @purchase_bp.route('/save', methods=['POST'])
@@ -159,63 +142,6 @@ def print_bill(id):
     shop = shop_doc.to_dict() if shop_doc.exists else {}
 
     return render_template('purchase/print.html', p=p, shop=shop)
-
-
-@purchase_bp.route('/update/<id>', methods=['POST'])
-def update(id):
-    doc_ref = db.collection('purchases').document(id)
-    doc = doc_ref.get()
-    if not doc.exists:
-        flash('Purchase not found', 'danger')
-        return redirect(url_for('purchase.report'))
-
-    f = request.form
-    bill_no = (f.get('bill_no') or '').strip()
-    if not bill_no:
-        flash('Bill No. is required.', 'danger')
-        return redirect(url_for('purchase.edit', id=id))
-
-    item_matches = db.collection('items').where('item_name', '==', f['item_name']).limit(1).get()
-    item_id = item_matches[0].id if item_matches else None
-
-    firm_id = f.get('firm_id') or None
-
-    unit_price = float(f.get('unit_price', 0))
-    qty = int(f.get('qty', 1))
-    gst_pct = float(f.get('gst_percent', 12))
-
-    total_price = unit_price * qty
-    price_without_gst = round(total_price / (1 + gst_pct / 100), 2)
-    gst_amount = round(total_price - price_without_gst, 2)
-
-    existing = doc.to_dict() or {}
-    doc_ref.update({
-        'item_id': item_id,
-        'item_name': f['item_name'],
-        'purchase_date': f['purchase_date'],
-        'bill_no': bill_no,
-        'qty': qty,
-        'unit_price': unit_price,
-        'price_without_gst': price_without_gst,
-        'gst_percent': gst_pct,
-        'gst_amount': gst_amount,
-        'total_price': total_price,
-        'firm_id': firm_id,
-        'firm_name': f.get('firm_name', ''),
-        'firm_address': f.get('firm_address', ''),
-        'firm_gst_no': f.get('firm_gst_no', ''),
-        'firm_mobile': f.get('firm_mobile', ''),
-        'hsn': f.get('hsn', ''),
-        'imei': f.get('imei', ''),
-        'color': f.get('color', ''),
-        'ram': f.get('ram', ''),
-        'memory': f.get('memory', ''),
-        'updated_at': datetime.now(timezone.utc),
-    })
-
-    invalidate_cache('purchases')
-    flash(f'Purchase bill {bill_no} updated successfully!', 'success')
-    return redirect(url_for('purchase.print_bill', id=id))
 
 
 @purchase_bp.route('/delete/<id>', methods=['POST'])
