@@ -188,6 +188,9 @@ tbody td{padding:10px 12px;vertical-align:middle}
   <a href="/sales/report" class="nav-link">
     <i class="fa-solid fa-file-invoice-dollar"></i><span>Sales Report</span>
   </a>
+  <a href="/reports/" class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}">
+    <i class="fa-solid fa-file-excel"></i><span>GST Reports (CA)</span>
+  </a>
   <a href="/stock/" class="nav-link {% if 'stock' in request.endpoint %}active{% endif %}">
     <i class="fa-solid fa-boxes-stacked"></i><span>Stock Balance</span>
   </a>
