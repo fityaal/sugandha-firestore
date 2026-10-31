@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}GST Reports – Sugandha{% endblock %}
+{% block page_title %}GST Reports for CA{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h2><i class="fa-solid fa-file-excel"></i> Download Sales &amp; Purchase Register</h2>
+  </div>
+  <p style="color:var(--muted);margin-bottom:14px">
+    Choose the period, then download the register as Excel (with a rate-wise GST summary sheet) or CSV to hand over to your CA.
+    Tax is split into CGST/SGST for same-state parties and IGST where the party's GSTIN state differs from your shop's state code.
+  </p>
+  <form method="GET" id="periodForm" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+    <label>From</label>
+    <input type="date" name="from_date" id="from_date" class="form-control" value="{{ from_date }}" style="max-width:170px">
+    <label>To</label>
+    <input type="date" name="to_date" id="to_date" class="form-control" value="{{ to_date }}" style="max-width:170px">
+    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> Update</button>
+  </form>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+    <button type="button" class="btn btn-outline btn-sm" onclick="setRange('this')">This Month</button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="setRange('last')">Last Month</button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="setRange('fy')">This Financial Year</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+    {% for kind, label, icon in [('sales','Sales Register (Outward)','fa-file-invoice-dollar'),('purchase','Purchase Register (Inward)','fa-file-invoice')] %}
+    {% set t = summary[kind] %}
+    <div class="card" style="margin:0">
+      <h3 style="margin-bottom:10px"><i class="fa-solid {{ icon }}"></i> {{ label }}</h3>
+      <table style="width:100%;margin-bottom:12px">
+        <tr><td>Records</td><td style="text-align:right"><strong>{{ t.count }}</strong></td></tr>
+        <tr><td>Taxable Value</td><td style="text-align:right">₹{{ '{:,.2f}'.format(t.taxable) }}</td></tr>
+        <tr><td>CGST</td><td style="text-align:right">₹{{ '{:,.2f}'.format(t.cgst) }}</td></tr>
+        <tr><td>SGST</td><td style="text-align:right">₹{{ '{:,.2f}'.format(t.sgst) }}</td></tr>
+        <tr><td>IGST</td><td style="text-align:right">₹{{ '{:,.2f}'.format(t.igst) }}</td></tr>
+        <tr><td><strong>Total GST</strong></td><td style="text-align:right"><strong>₹{{ '{:,.2f}'.format(t.gst) }}</strong></td></tr>
+        <tr><td><strong>Invoice Value</strong></td><td style="text-align:right"><strong>₹{{ '{:,.2f}'.format(t.total) }}</strong></td></tr>
+      </table>
+      {% if t.duplicates %}
+      <div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:13px">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ t.duplicates }} row(s) share a duplicate number. They are highlighted in the download – please verify before filing.
+      </div>
+      {% endif %}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn btn-success" href="/reports/download?kind={{ kind }}&fmt=xlsx&from_date={{ from_date }}&to_date={{ to_date }}"><i class="fa-solid fa-file-excel"></i> Excel</a>
+        <a class="btn btn-outline" href="/reports/download?kind={{ kind }}&fmt=csv&from_date={{ from_date }}&to_date={{ to_date }}"><i class="fa-solid fa-file-csv"></i> CSV</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<script>
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function setRange(w){
+  const n=new Date(); let a,b;
+  if(w==='this'){a=new Date(n.getFullYear(),n.getMonth(),1); b=n;}
+  else if(w==='last'){a=new Date(n.getFullYear(),n.getMonth()-1,1); b=new Date(n.getFullYear(),n.getMonth(),0);}
+  else {const y=n.getMonth()>=3?n.getFullYear():n.getFullYear()-1; a=new Date(y,3,1); b=n;}
+  document.getElementById('from_date').value=iso(a);
+  document.getElementById('to_date').value=iso(b);
+  document.getElementById('periodForm').submit();
+}
+</script>
+{% endblock %}
